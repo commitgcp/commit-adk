@@ -1,0 +1,525 @@
+This file is a merged representation of a subset of the codebase, containing specifically included files and files not matching ignore patterns, combined into a single document by Repomix.
+The content has been processed where empty lines have been removed.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+4. Repository files, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Only files matching these patterns are included: **/*, .cursorrules, .cursor/rules/*, .clinerules, CLAUDE.md
+- Files matching these patterns are excluded: .*.*, **/*.pbxproj, **/node_modules/**, **/dist/**, **/build/**, **/compile/**, **/*.spec.*, **/*.pyc, **/.env, **/.env.*, **/*.env, **/*.env.*, **/*.lock, **/*.lockb, **/package-lock.*, **/pnpm-lock.*, **/*.tsbuildinfo
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Empty lines have been removed from all files
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+<additional_info>
+
+</additional_info>
+
+</file_summary>
+
+<directory_structure>
+__init__.py
+__main__.py
+a2a_agent_wrapper.py
+a2a_task_manager.py
+agent.py
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="__init__.py">
+from . import agent
+</file>
+
+<file path="__main__.py">
+import logging
+import os
+import click
+# Assuming a2a library is installed and common.server/types are accessible
+from common.server import A2AServer
+from common.types import (
+    AgentCapabilities,
+    AgentCard,
+    AgentSkill,
+    MissingAPIKeyError, # Assuming this might be relevant if GOOGLE_API_KEY is needed
+)
+from dotenv import load_dotenv
+from .a2a_task_manager import PythonDeveloperTaskManager
+from .a2a_agent_wrapper import PythonDeveloperA2AWrapper
+# Import the original agent's name and description for the AgentCard
+from agents.python_developer.agent import root_agent as python_dev_adk_agent
+load_dotenv() # Load environment variables from .env file, if present
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+DEFAULT_HOST = 'localhost'
+DEFAULT_PORT = 10000 # Using a different port than the ADK sample
+@click.command()
+@click.option('--host', default=DEFAULT_HOST, help=f"Hostname to bind the server to (default: {DEFAULT_HOST})")
+@click.option('--port', default=DEFAULT_PORT, type=int, help=f"Port to bind the server to (default: {DEFAULT_PORT})")
+def main(host: str, port: int):
+    try:
+        # Example: Check for API keys if your ADK agent relies on them directly 
+        # and they are not handled by ADC or other means.
+        # This is just a placeholder, adapt if necessary based on python_dev_adk_agent's needs.
+        # if not os.getenv('GOOGLE_GENAI_USE_VERTEXAI') == 'TRUE':
+        #     if not os.getenv('GOOGLE_API_KEY'):
+        #         raise MissingAPIKeyError(
+        #             'GOOGLE_API_KEY environment variable not set and GOOGLE_GENAI_USE_VERTEXAI is not TRUE.'
+        #         )
+        agent_wrapper_instance = PythonDeveloperA2AWrapper()
+        capabilities = AgentCapabilities(streaming=True, pushNotifications=False) # Assuming no push notifications for now
+        # Define a skill for the Python Developer Agent
+        # Using the description from the LlmAgent
+        python_coder_skill = AgentSkill(
+            id='python_code_execution',
+            name='Python Code Execution and Development',
+            description=python_dev_adk_agent.description, # Using the ADK agent's description
+            tags=['python', 'coding', 'development', 'scripting', 'execution'],
+            examples=[
+                'Write a python script to sort a list of numbers.',
+                'Execute this python code: print("Hello World")',
+                'Generate a python function to calculate factorial.'
+            ],
+            # Input/Output modes are derived from the wrapper's SUPPORTED_CONTENT_TYPES
+            inputModes=agent_wrapper_instance.SUPPORTED_CONTENT_TYPES,
+            outputModes=agent_wrapper_instance.SUPPORTED_CONTENT_TYPES,
+        )
+        agent_card = AgentCard(
+            name=python_dev_adk_agent.name, # Using the ADK agent's name ("coding_agent")
+            description=python_dev_adk_agent.description, # Using the ADK agent's description
+            url=f'http://{host}:{port}/', # A2A server URL
+            version='1.0.0', # Arbitrary version
+            defaultInputModes=agent_wrapper_instance.SUPPORTED_CONTENT_TYPES,
+            defaultOutputModes=agent_wrapper_instance.SUPPORTED_CONTENT_TYPES,
+            capabilities=capabilities,
+            skills=[python_coder_skill],
+            # provider, documentationUrl, authentication can be added if needed
+        )
+        task_manager = PythonDeveloperTaskManager(agent_wrapper=agent_wrapper_instance)
+        server = A2AServer(
+            agent_card=agent_card,
+            task_manager=task_manager,
+            host=host,
+            port=port,
+            # Other A2AServer options like base_path, jwks_url if needed
+        )
+        logger.info(f"Starting Python Developer A2A Server at http://{host}:{port}")
+        logger.info(f"Agent Card will be available at http://{host}:{port}/.well-known/agent.json")
+        server.start()
+    except MissingAPIKeyError as e: # Example error handling
+        logger.error(f'Configuration Error: {e}')
+        exit(1)
+    except ImportError as e:
+        logger.error(f"ImportError: {e}. Please ensure the 'a2a' library and its dependencies are installed.")
+        logger.error("You might need to run: pip install google-a2a") # Or however it's installed
+        exit(1)
+    except Exception as e:
+        logger.error(f'An unexpected error occurred during server startup: {e}', exc_info=True)
+        exit(1)
+if __name__ == '__main__':
+    main()
+</file>
+
+<file path="a2a_agent_wrapper.py">
+from collections.abc import AsyncIterable
+from typing import Any
+from google.genai import types as genai_types
+# Import the existing ADK agent and runner
+from agents.python_developer.agent import root_agent, runner
+# A default user_id for ADK runner, A2A may provide its own session/user context
+DEFAULT_ADK_USER_ID = "a2a_user"
+class PythonDeveloperA2AWrapper:
+    SUPPORTED_CONTENT_TYPES = ["text"]
+    def __init__(self):
+        self._agent = root_agent
+        self._runner = runner
+        # The user_id for ADK sessions can be mapped from A2A session/user if needed
+        # For simplicity, using a default one for now.
+        self._user_id = DEFAULT_ADK_USER_ID 
+    def get_processing_message(self) -> str:
+        return "The Python Developer agent is thinking..."
+    def invoke(self, query: str, session_id: str) -> str:
+        # Ensure session_id from A2A is used for ADK session
+        # The ADK runner's app_name is already set to "python_developer"
+        # Check if session exists, create if not
+        session = self._runner.session_service.get_session(
+            app_name=self._runner.app_name, # Use runner's app_name
+            user_id=self._user_id,
+            session_id=session_id,
+        )
+        user_content = genai_types.Content(
+            role='user', parts=[genai_types.Part.from_text(text=query)]
+        )
+        if session is None:
+            session = self._runner.session_service.create_session(
+                app_name=self._runner.app_name, # Use runner's app_name
+                user_id=self._user_id,
+                state={}, # Initial state
+                session_id=session_id,
+            )
+        events = list(
+            self._runner.run(
+                user_id=self._user_id, # Use the mapped/default user_id
+                session_id=session.id, # Use the A2A provided session_id
+                new_message=user_content,
+            )
+        )
+        if not events or not events[-1].content or not events[-1].content.parts:
+            return '' # Or some error/empty message
+        # Combine text parts from the last event
+        response_text = '\n'.join(
+            [p.text for p in events[-1].content.parts if p.text is not None]
+        )
+        return response_text
+    async def stream(self, query: str, session_id: str) -> AsyncIterable[dict[str, Any]]:
+        # Ensure session_id from A2A is used for ADK session
+        session = self._runner.session_service.get_session(
+            app_name=self._runner.app_name, # Use runner's app_name
+            user_id=self._user_id,
+            session_id=session_id,
+        )
+        user_content = genai_types.Content(
+            role='user', parts=[genai_types.Part.from_text(text=query)]
+        )
+        if session is None:
+            session = self._runner.session_service.create_session(
+                app_name=self._runner.app_name, # Use runner's app_name
+                user_id=self._user_id,
+                state={},
+                session_id=session_id,
+            )
+        async for event in self._runner.run_async(
+            user_id=self._user_id,
+            session_id=session.id,
+            new_message=user_content,
+        ):
+            if event.is_final_response():
+                response_content = ''
+                if event.content and event.content.parts:
+                    # Check for text parts
+                    text_parts = [p.text for p in event.content.parts if p.text is not None]
+                    if text_parts:
+                        response_content = '\n'.join(text_parts)
+                    # Could also check for function_response or other part types if the agent uses them
+                    # For now, primarily focusing on text output as per LlmAgent's typical behavior.
+                yield {
+                    'is_task_complete': True,
+                    'content': response_content,
+                }
+            # ADK's LlmAgent might produce intermediate "thought" events or tool call events.
+            # A2A's streaming expects progress updates.
+            # We can map ADK's non-final events to A2A's "WORKING" state with a message.
+            elif event.content and event.content.parts: # Intermediate content
+                intermediate_text_parts = [p.text for p in event.content.parts if p.text is not None]
+                if intermediate_text_parts:
+                    yield {
+                        'is_task_complete': False,
+                        'updates': '\n'.join(intermediate_text_parts),
+                    }
+                # If there are tool calls or other non-text parts, decide how to represent them
+                # For now, sticking to text updates or the generic processing message.
+            else: # No specific content in this event, use generic message
+                 yield {
+                    'is_task_complete': False,
+                    'updates': self.get_processing_message(),
+                }
+</file>
+
+<file path="a2a_task_manager.py">
+import logging
+from collections.abc import AsyncIterable
+from typing import Any
+# Assuming a2a library is installed and common.server/types are accessible
+# If not, these would need to be vendored or their paths adjusted.
+from common.server import utils as a2a_utils
+from common.server.task_manager import InMemoryTaskManager
+from common.types import (
+    Artifact,
+    DataPart,
+    InternalError,
+    JSONRPCResponse,
+    Message,
+    SendTaskRequest,
+    SendTaskResponse,
+    SendTaskStreamingRequest,
+    SendTaskStreamingResponse,
+    Task,
+    TaskArtifactUpdateEvent,
+    TaskSendParams,
+    TaskState,
+    TaskStatus,
+    TaskStatusUpdateEvent,
+    TextPart,
+)
+from .a2a_agent_wrapper import PythonDeveloperA2AWrapper
+logger = logging.getLogger(__name__)
+class PythonDeveloperTaskManager(InMemoryTaskManager):
+    def __init__(self, agent_wrapper: PythonDeveloperA2AWrapper):
+        super().__init__()
+        self.agent_wrapper = agent_wrapper
+    async def _stream_generator(
+        self, request: SendTaskStreamingRequest
+    ) -> AsyncIterable[SendTaskStreamingResponse] | JSONRPCResponse:
+        task_send_params: TaskSendParams = request.params
+        query = self._get_user_query(task_send_params)
+        if query is None: # Handle non-text input if necessary, or error out
+            yield JSONRPCResponse(
+                id=request.id,
+                error=InternalError(message="Invalid input: Only text queries are supported."),
+            )
+            return
+        try:
+            async for item in self.agent_wrapper.stream(
+                query, task_send_params.sessionId
+            ):
+                is_task_complete = item['is_task_complete']
+                current_artifacts = None # Renamed from 'artifacts' to avoid conflict
+                if not is_task_complete:
+                    task_state = TaskState.WORKING
+                    # Ensure item['updates'] is a string
+                    update_text = str(item.get('updates', '')) 
+                    parts = [TextPart(text=update_text)]
+                else:
+                    content = item.get('content', '')
+                    if isinstance(content, dict): # For potential future structured output
+                        # This part might need adjustment based on how the PythonDeveloperAgent formats structured output
+                        task_state = TaskState.COMPLETED # Or INPUT_REQUIRED if it's a form
+                        parts = [DataPart(data=content)] 
+                    else:
+                        task_state = TaskState.COMPLETED
+                        # Ensure content is a string
+                        content_text = str(content)
+                        parts = [TextPart(text=content_text)]
+                    current_artifacts = [Artifact(parts=parts, index=0, append=False)]
+                message = Message(role='agent', parts=parts)
+                task_status = TaskStatus(state=task_state, message=message)
+                await self._update_store(
+                    task_send_params.id, task_status, current_artifacts
+                )
+                task_update_event = TaskStatusUpdateEvent(
+                    id=task_send_params.id,
+                    status=task_status,
+                    final=False, # This will be set to True later if is_task_complete
+                )
+                yield SendTaskStreamingResponse(
+                    id=request.id, result=task_update_event
+                )
+                if current_artifacts:
+                    for art in current_artifacts: # Renamed loop variable
+                        yield SendTaskStreamingResponse(
+                            id=request.id,
+                            result=TaskArtifactUpdateEvent(
+                                id=task_send_params.id,
+                                artifact=art,
+                                final=False, # Artifacts themselves aren't 'final' task events usually
+                            ),
+                        )
+                if is_task_complete:
+                    final_status_event = TaskStatusUpdateEvent(
+                        id=task_send_params.id,
+                        status=TaskStatus(state=task_status.state), # Send only state for final update
+                        final=True,
+                    )
+                    yield SendTaskStreamingResponse(
+                        id=request.id, result=final_status_event
+                    )
+        except Exception as e:
+            logger.error(f'An error occurred while streaming the response: {e}', exc_info=True)
+            yield JSONRPCResponse(
+                id=request.id,
+                error=InternalError(
+                    message=f'An error occurred while streaming the response: {str(e)}'
+                ),
+            )
+    def _validate_request(
+        self, request: SendTaskRequest | SendTaskStreamingRequest
+    ) -> JSONRPCResponse | None:
+        task_send_params: TaskSendParams = request.params
+        if not a2a_utils.are_modalities_compatible(
+            task_send_params.acceptedOutputModes,
+            self.agent_wrapper.SUPPORTED_CONTENT_TYPES,
+        ):
+            logger.warning(
+                'Unsupported output mode. Received %s, Agent supports %s',
+                task_send_params.acceptedOutputModes,
+                self.agent_wrapper.SUPPORTED_CONTENT_TYPES,
+            )
+            return a2a_utils.new_incompatible_types_error(request.id)
+        if not task_send_params.message or not task_send_params.message.parts:
+             logger.warning('Received task with no message parts.')
+             return JSONRPCResponse(id=request.id, error=InternalError(message="Task message parts are missing."))
+        if not any(isinstance(part, TextPart) for part in task_send_params.message.parts):
+            logger.warning('Received task with no text parts.')
+            return JSONRPCResponse(id=request.id, error=InternalError(message="Only text input is supported."))
+        return None
+    async def on_send_task(self, request: SendTaskRequest) -> SendTaskResponse:
+        error_resp = self._validate_request(request)
+        if error_resp:
+            return error_resp
+        await self.upsert_task(request.params)
+        return await self._invoke(request)
+    async def on_send_task_subscribe(
+        self, request: SendTaskStreamingRequest
+    ) -> AsyncIterable[SendTaskStreamingResponse] | JSONRPCResponse:
+        error_resp = self._validate_request(request)
+        if error_resp:
+            return error_resp
+        await self.upsert_task(request.params)
+        # The generator itself handles yielding JSONRPCResponse on internal errors
+        return self._stream_generator(request) 
+    async def _update_store(
+        self, task_id: str, status: TaskStatus, artifacts: list[Artifact] | None
+    ) -> Task:
+        async with self.lock:
+            try:
+                task = self.tasks[task_id]
+            except KeyError:
+                logger.error(f'Task {task_id} not found for updating.')
+                # This case should ideally be handled by upsert_task before _update_store is called.
+                # If upsert_task was called, this implies a race or logic error.
+                raise ValueError(f'Task {task_id} not found during update. Ensure upsert_task was called.')
+            task.status = status
+            if artifacts:
+                if task.artifacts is None:
+                    task.artifacts = []
+                task.artifacts.extend(artifacts)
+            return task
+    async def _invoke(self, request: SendTaskRequest) -> SendTaskResponse:
+        task_send_params: TaskSendParams = request.params
+        query = self._get_user_query(task_send_params)
+        if query is None:
+            return SendTaskResponse(
+                id=request.id, 
+                error=InternalError(message="Invalid input: Only text queries are supported.")
+            )
+        try:
+            result_text = self.agent_wrapper.invoke(query, task_send_params.sessionId)
+        except Exception as e:
+            logger.error(f'Error invoking agent_wrapper: {e}', exc_info=True)
+            # Update task state to FAILED before returning error
+            fail_status = TaskStatus(state=TaskState.FAILED, message=Message(role='agent', parts=[TextPart(text=f"Agent invocation failed: {str(e)}")]))
+            await self._update_store(task_send_params.id, fail_status, None)
+            return SendTaskResponse(
+                id=request.id, 
+                error=InternalError(message=f'Error invoking agent: {str(e)}')
+            )
+        # Assuming simple text response for now
+        # If PythonDeveloperAgent can signal INPUT_REQUIRED, this logic needs adjustment
+        parts = [TextPart(text=str(result_text))]
+        task_state = TaskState.COMPLETED 
+        final_task_status = TaskStatus(state=task_state, message=Message(role='agent', parts=parts))
+        final_artifacts = [Artifact(parts=parts)]
+        task = await self._update_store(
+            task_send_params.id,
+            final_task_status,
+            final_artifacts,
+        )
+        return SendTaskResponse(id=request.id, result=task)
+    def _get_user_query(self, task_send_params: TaskSendParams) -> str | None:
+        if task_send_params.message and task_send_params.message.parts:
+            for part in task_send_params.message.parts:
+                if isinstance(part, TextPart):
+                    return part.text
+        return None # No text part found
+</file>
+
+<file path="agent.py">
+from google.adk.agents import LlmAgent
+from google.adk.code_executors import VertexAiCodeExecutor
+from google.adk.planners import BuiltInPlanner
+from google.genai.types import GenerateContentConfig, ThinkingConfig
+from google.adk.sessions import InMemorySessionService
+from google.adk.artifacts import InMemoryArtifactService
+from google.adk.runners import Runner 
+from google.adk.agents.callback_context import CallbackContext
+from google.adk.models import LlmResponse
+from typing import Optional
+def simple_after_model_modifier(
+    callback_context: CallbackContext, llm_response: LlmResponse
+) -> Optional[LlmResponse]:
+    """Inspects/modifies the LLM response after it's received."""
+    agent_name = callback_context.agent_name
+    print(f"[Callback] After model call for agent: {agent_name}")
+    # --- Inspection ---
+    original_text = ""
+    if llm_response.content and llm_response.content.parts:
+        # Assuming simple text response for this example
+        if llm_response.content.parts[0].text:
+            original_text = llm_response.content.parts[0].text
+            print(f"[Callback] Inspected original response text: '{original_text}'") # Log snippet
+        elif llm_response.content.parts[0].function_call:
+             print(f"[Callback] Inspected response: Contains function call '{llm_response.content.parts[0].function_call.name}'. No text modification.")
+             return None # Don't modify tool calls in this example
+        else:
+             print("[Callback] Inspected response: No text content found.")
+             return None
+    elif llm_response.error_message:
+        print(f"[Callback] Inspected response: Contains error '{llm_response.error_message}'. No modification.")
+        return None
+    else:
+        print("[Callback] Inspected response: Empty LlmResponse.")
+        return None # Nothing to modify
+root_agent = LlmAgent(
+    model="gemini-2.5-flash-preview-04-17",
+    name="coding_agent",
+    description="An agent that can write and execute Python code. Use this agent for tasks involving calculations, data processing, logical analysis, or any general-purpose programming needs. It can handle complex operations that might involve math, data manipulation, and algorithmic logic.",
+    instruction="""You are a powerful coding assistant. Your primary task is to write and execute Python code to complete the user's request or to perform calculations and analysis delegated by other agents.
+Always ensure your code is robust and handles potential edge cases.
+Set the request status to completed if the task is completed.
+""",
+    code_executor=VertexAiCodeExecutor(
+        resource_name="projects/606879766101/locations/us-central1/extensions/8487407331733143552",
+        optimize_data_file=True,
+        stateful=False,
+    ),
+    planner=BuiltInPlanner(
+        thinking_config=ThinkingConfig(include_thoughts=True, thinking_budget=5000)
+    ),
+    generate_content_config=GenerateContentConfig(
+        temperature=0,
+    ),
+    after_model_callback=simple_after_model_modifier
+)
+# Setup Runtime
+session_service = InMemorySessionService()
+artifact_service = InMemoryArtifactService()
+runner = Runner(
+    agent=root_agent,
+    session_service=session_service,
+    artifact_service=artifact_service,
+    app_name="python_developer",
+)
+</file>
+
+</files>
