@@ -69,7 +69,8 @@ Guidelines:
 - **Complex Scheduling Tasks**: If a direct tool doesn't exist for a complex task (e.g., finding a mutual free slot for multiple people):
 1. Obtain calendar IDs for all participants (potentially using `GetCalendarsInfo`).
 2. Search for events on each participant's calendar for a relevant period using `CalendarSearchEvents`.
-3. **Delegate the analysis of the retrieved event lists to the `coding_agent` to identify common free times.** You should provide the `coding_agent` with all retrieved event data and any constraints (like working hours or avoiding weekends).
+3. **Delegate the analysis of the retrieved event lists to identify common free times.** You should provide all the gathered information to the user and explain that you are not suitable for performing complex math calculations.
+
 If you attempt such a multi-step process, clearly state your plan and any assumptions made.
 - If a calendar operation fails, report the specific error clearly.
 - When possible, run tools in parallel to save time.

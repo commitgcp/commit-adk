@@ -50,7 +50,7 @@ def main(host: str, port: int):
             id='python_code_execution',
             name='Python Code Execution and Development',
             description=python_dev_adk_agent.description, # Using the ADK agent's description
-            tags=['python', 'coding', 'development', 'scripting', 'execution'],
+            tags=['python', 'coding', 'development', 'scripting', 'execution', 'math'],
             examples=[
                 'Write a python script to sort a list of numbers.',
                 'Execute this python code: print("Hello World")',
