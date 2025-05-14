@@ -6,13 +6,17 @@ from google.genai.types import GenerateContentConfig, ThinkingConfig
 from google.adk.agents.callback_context import CallbackContext
 from google.adk.models import LlmResponse
 from typing import Optional
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def simple_after_model_modifier(
     callback_context: CallbackContext, llm_response: LlmResponse
 ) -> Optional[LlmResponse]:
     """Inspects/modifies the LLM response after it's received."""
     agent_name = callback_context.agent_name
-    print(f"[Callback] After model call for agent: {agent_name}")
+    logger.info(f"[Callback] After model call for agent: {agent_name}")
 
     # --- Inspection ---
     original_text = ""
@@ -20,18 +24,18 @@ def simple_after_model_modifier(
         # Assuming simple text response for this example
         if llm_response.content.parts[0].text:
             original_text = llm_response.content.parts[0].text
-            print(f"[Callback] Inspected original response text: '{original_text}'") # Log snippet
+            logger.info(f"[Callback] Inspected original response text: '{original_text}'") # Log snippet
         elif llm_response.content.parts[0].function_call:
-             print(f"[Callback] Inspected response: Contains function call '{llm_response.content.parts[0].function_call.name}'. No text modification.")
+             logger.info(f"[Callback] Inspected response: Contains function call '{llm_response.content.parts[0].function_call.name}'. No text modification.")
              return None # Don't modify tool calls in this example
         else:
-             print("[Callback] Inspected response: No text content found.")
+             logger.info("[Callback] Inspected response: No text content found.")
              return None
     elif llm_response.error_message:
-        print(f"[Callback] Inspected response: Contains error '{llm_response.error_message}'. No modification.")
+        logger.info(f"[Callback] Inspected response: Contains error '{llm_response.error_message}'. No modification.")
         return None
     else:
-        print("[Callback] Inspected response: Empty LlmResponse.")
+        logger.info("[Callback] Inspected response: Empty LlmResponse.")
         return None # Nothing to modify
 
 async def create_agent():
