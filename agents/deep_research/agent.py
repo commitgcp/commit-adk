@@ -38,18 +38,6 @@ def simple_after_model_modifier(
         logger.info("[Callback] Inspected response: Empty LlmResponse.")
         return None # Nothing to modify
 
-formulate_research_question_agent = LlmAgent(
-    model="gemini-2.5-flash-preview-04-17",
-    name="formulate_research_question_agent",
-    description="An agent that formulates a research question",
-    instruction="Formulate a research question based on the given topic",
-    output_key="research_questions",
-    generate_content_config=GenerateContentConfig(
-        temperature=0.5,
-    ),
-    after_model_callback=simple_after_model_modifier,
-)
-
 search_tool = LlmAgent(
     model="gemini-2.5-flash-preview-04-17",
     name="search_tool",
@@ -78,6 +66,18 @@ initial_context_search = LlmAgent(
     output_key="initial_context",
     generate_content_config=GenerateContentConfig(
         temperature=0,
+    ),
+    after_model_callback=simple_after_model_modifier,
+)
+
+formulate_research_question_agent = LlmAgent(
+    model="gemini-2.5-flash-preview-04-17",
+    name="formulate_research_question_agent",
+    description="An agent that formulates a research question",
+    instruction="Formulate a research question based on the given topic",
+    output_key="research_questions",
+    generate_content_config=GenerateContentConfig(
+        temperature=0.5,
     ),
     after_model_callback=simple_after_model_modifier,
 )
