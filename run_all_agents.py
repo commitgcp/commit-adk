@@ -13,6 +13,7 @@ AGENT_COMMANDS = [
     ("agents.google_calendar", [sys.executable, "-m", "agents.google_calendar"]),
     ("agents.linkedin", [sys.executable, "-m", "agents.linkedin"]),
     ("agents.python_developer", [sys.executable, "-m", "agents.python_developer"]),
+    ("agents.browser", [sys.executable, "-m", "agents.browser"]),
 ]
 
 # To store the process objects
@@ -80,6 +81,7 @@ if __name__ == "__main__":
         import agents.google_calendar
         import agents.linkedin 
         import agents.python_developer
+        import agents.browser
         print("All agent modules seem to be importable.", flush=True)
     except ImportError as e:
         print(f"Warning: Could not import an agent module: {e}", flush=True)

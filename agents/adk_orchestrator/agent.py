@@ -90,7 +90,7 @@ You can structure the report in any way you want, but it should always contain a
 
     loop_agent = LoopAgent(
         name="loop_agent",
-        max_iterations=3,
+        max_iterations=2,
         sub_agents=[formulate_research_question_agent, search_tool],
     )
 
