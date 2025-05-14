@@ -28,7 +28,6 @@ This repository showcases a sophisticated multi-agent system built with Python a
   - [Google Calendar Agent](#google-calendar-agent)
   - [Deep Research Agent](#deep-research-agent)
   - [Notion Agent](#notion-agent)
-- [Development](#development)
 
 ## Overview
 
@@ -119,7 +118,7 @@ This repository implements two distinct ways to orchestrate these specialized ag
 ### Cloning the Repository
 
 ```bash
-git clone <repository_url>
+git clone https://github.com/commitgcp/commit-adk.git
 cd commit-adk
 ```
 
@@ -176,12 +175,11 @@ NOTION_API_KEY="secret_..."
 # LinkedIn (via Proxycurl)
 PROXYCURL_API_KEY="your_proxycurl_api_key"
 
-# Google AI (Gemini API Key from AI Studio is often sufficient)
+# Optional: Google AI (Gemini API Key from AI Studio is often sufficient)
 GOOGLE_API_KEY="your_gemini_api_key_from_ai_studio"
 
 # Optional: If using Google Cloud Platform specific services
 # GOOGLE_CLOUD_PROJECT="your-gcp-project-id"
-# GOOGLE_APPLICATION_CREDENTIALS="/path/to/your/service-account-key.json" # Alternative to ADC login for GCP
 
 # Optional: To force non-Vertex AI for Gemini models if both API key and ADC are available
 # GOOGLE_GENAI_USE_VERTEXAI="FALSE"
