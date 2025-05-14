@@ -13,8 +13,8 @@ from common.types import (
 )
 from dotenv import load_dotenv
 
-from .a2a_task_manager import NotionTaskManager
-from .a2a_agent_wrapper import NotionA2AWrapper
+from .a2a_task_manager import BrowserTaskManager
+from .a2a_agent_wrapper import BrowserA2AWrapper
 
 # We will get agent details from the wrapper after async initialization
 # from agents.notion.agent import root_agent as notion_adk_agent # This line is removed/commented
@@ -25,32 +25,28 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 DEFAULT_HOST = 'localhost'
-DEFAULT_PORT = 10004 # Using a different port than the ADK sample
+DEFAULT_PORT = 10005 # Using a different port than the ADK sample
 
 async def _async_setup_operations(host: str, port: int):
     """Performs all asynchronous setup and returns necessary objects."""
     logger.info("Starting asynchronous setup...")
-    agent_wrapper_instance = await NotionA2AWrapper.create()
-    logger.info("NotionA2AWrapper created successfully.")
+    agent_wrapper_instance = await BrowserA2AWrapper.create()
+    logger.info("BrowserA2AWrapper created successfully.")
 
     underlying_agent = agent_wrapper_instance._underlying_agent
     if not underlying_agent:
         raise RuntimeError("Failed to initialize the underlying ADK agent in the wrapper.")
 
     capabilities = AgentCapabilities(streaming=True, pushNotifications=False)
-    notion_skill = AgentSkill(
-        id='notion',
+    browser_skill = AgentSkill(
+        id='browser',
         name=underlying_agent.name,
         description=underlying_agent.description,
-        tags=['notion', 'agent', 'collection', 'page', 'block', 'content-management', 'Agent Collection', 'database'],
+        tags=['browser', 'agent', 'collection', 'page', 'block', 'content-management', 'Agent Collection', 'database'],
         examples=[
-            'Create a new page titled "My Research Notes" under the "Agent Collection" page.',
-            'Add a paragraph "Initial findings are promising." to the "My Research Notes" page (assuming it exists).',
-            'Create a page named "Weekly Sync Summary" under "Agent Collection" and write "Attendees: Alice, Bob. Key decision: Proceed with plan A." into it.',
-            'Update the title of an existing page from "Old Project Plan" to "Archived Project Plan".',
-            'List all child pages or blocks within the "Agent Collection" page.',
-            'Create a new database named "Project Tasks" under the "Agent Collection" page with columns for Task Name, Assignee, and Due Date.',
-            'Add a new item to the "Project Tasks" database with Task Name: "Draft proposal", Assignee: "Me", Due Date: "Next Monday".'
+            'Search for the latest news on the stock market.'
+            'Go to this website and provide a full report https://lu.ma/b2o66w71'
+            'Subscribe to this event: https://lu.ma/b2o66w71'
         ],
         inputModes=agent_wrapper_instance.SUPPORTED_CONTENT_TYPES,
         outputModes=agent_wrapper_instance.SUPPORTED_CONTENT_TYPES,
@@ -63,9 +59,9 @@ async def _async_setup_operations(host: str, port: int):
         defaultInputModes=agent_wrapper_instance.SUPPORTED_CONTENT_TYPES,
         defaultOutputModes=agent_wrapper_instance.SUPPORTED_CONTENT_TYPES,
         capabilities=capabilities,
-        skills=[notion_skill],
+        skills=[browser_skill],
     )
-    task_manager = NotionTaskManager(agent_wrapper=agent_wrapper_instance)
+    task_manager = BrowserTaskManager(agent_wrapper=agent_wrapper_instance)
     logger.info("Async setup complete. Server arguments prepared.")
     return agent_wrapper_instance, agent_card, task_manager
 
@@ -89,7 +85,7 @@ def main(host: str, port: int):  # This is now a synchronous function
             host=host,
             port=port,
         )
-        logger.info(f"Starting Notion A2A Server at http://{host}:{port}")
+        logger.info(f"Starting Browser A2A Server at http://{host}:{port}")
         logger.info(f"Agent Card will be available at http://{host}:{port}/.well-known/agent.json")
         # This call is blocking and will run its own asyncio event loop.
         # Uvicorn (and thus server.start()) handles KeyboardInterrupt to shut down.
@@ -117,7 +113,7 @@ def main(host: str, port: int):  # This is now a synchronous function
         # This block is executed when server.start() returns (e.g., after a clean shutdown from KeyboardInterrupt)
         # or if an error occurred and was handled above (leading to exit, but finally still runs).
         if agent_wrapper_instance:
-            logger.info("Server has shut down. Attempting final cleanup of NotionA2AWrapper...")
+            logger.info("Server has shut down. Attempting final cleanup of BrowserA2AWrapper...")
             try:
                 # Phase 3: Asynchronous cleanup in a new event loop
                 asyncio.run(agent_wrapper_instance.close())
